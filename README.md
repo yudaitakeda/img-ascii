@@ -1,9 +1,8 @@
 # img-ascii
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Language: Rust](https://img.shields.io/badge/language-Rust-orange.svg?logo=rust)
-![GitHub last commit](https://img.shields.io/github/last-commit/yudaitakeda/img-ascii)
-![GitHub Repo stars](https://img.shields.io/github/stars/yudaitakeda/img-ascii?style=social)
+[![License](https://img.shields.io/badge/License-CC--BY--4.0-green.svg)](https://github.com/tamada/developing\_flows/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/Version-1.0.4-green.svg)](https://github.com/tamada/developing\_flows/releases/tag/v1.0.4)
+[![DOI](https://zenodo.org/badge/335323499.svg)](https://zenodo.org/badge/latestdoi/335323499)
 ターミナルで指定画像をascii画像で描画
 
 ## Description
