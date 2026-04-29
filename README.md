@@ -4,7 +4,7 @@
 ![Language: Rust](https://img.shields.io/badge/language-Rust-orange.svg?logo=rust)
 ![GitHub last commit](https://img.shields.io/github/last-commit/yudaitakeda/img-ascii)
 ![GitHub Repo stars](https://img.shields.io/github/stars/yudaitakeda/img-ascii?style=social)
-
+[![Coverage Status](https://coveralls.io/repos/github/yudaitakeda/img-ascii/badge.svg?branch=main)](https://coveralls.io/github/yudaitakeda/img-ascii?branch=main)
 
 ## Description
 
