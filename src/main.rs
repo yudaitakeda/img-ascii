@@ -2,7 +2,7 @@ use std::env;
 use image::GenericImageView;
 
 // ============ 定数 ============
-const DEFAULT_WIDTH: u32 = 200;
+const DEFAULT_WIDTH: u32 = 270;
 const HEIGHT_RATIO: f32 = 0.5;
 const BRIGHTNESS_R: f32 = 0.299;
 const BRIGHTNESS_G: f32 = 0.587;
