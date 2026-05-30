@@ -117,25 +117,127 @@ fn main() {
 mod tests {
     use super::*;
 
+    // ========== 単体テスト: 明るさ計算 ==========
     #[test]
-    fn test_calculate_brightness() {
-        // 黒 (0, 0, 0)
+    fn test_calculate_brightness_black() {
         assert_eq!(calculate_brightness(0, 0, 0), 0.0);
-        // 白 (255, 255, 255)
+    }
+
+    #[test]
+    fn test_calculate_brightness_white() {
         assert_eq!(calculate_brightness(255, 255, 255), 255.0);
     }
 
     #[test]
-    fn test_new_dimensions() {
-        let (w, h) = calculate_new_dimensions(100, 100, 400);
+    fn test_calculate_brightness_red() {
+        let r = 255u8;
+        let brightness = calculate_brightness(r, 0, 0);
+        assert!(brightness > 0.0 && brightness < 255.0);
+    }
+
+    #[test]
+    fn test_calculate_brightness_green() {
+        let g = 255u8;
+        let brightness = calculate_brightness(0, g, 0);
+        assert!(brightness > 0.0 && brightness < 255.0);
+    }
+
+    #[test]
+    fn test_calculate_brightness_blue() {
+        let b = 255u8;
+        let brightness = calculate_brightness(0, 0, b);
+        assert!(brightness > 0.0 && brightness < 255.0);
+    }
+
+    #[test]
+    fn test_calculate_brightness_monotonic() {
+        let b1 = calculate_brightness(100, 100, 100);
+        let b2 = calculate_brightness(200, 200, 200);
+        assert!(b1 < b2, "brightness should increase with higher RGB values");
+    }
+
+    // ========== 単体テスト: 寸法計算 ==========
+    #[test]
+    fn test_calculate_new_dimensions_width() {
+        let (w, _h) = calculate_new_dimensions(100, 100, 400);
         assert_eq!(w, 400);
+    }
+
+    #[test]
+    fn test_calculate_new_dimensions_height_positive() {
+        let (_w, h) = calculate_new_dimensions(100, 100, 400);
         assert!(h > 0);
     }
 
     #[test]
-    fn test_brightness_to_ascii() {
-        let dark = brightness_to_ascii(0.0);
-        let light = brightness_to_ascii(255.0);
-        assert_ne!(dark, light);
+    fn test_calculate_new_dimensions_aspect_ratio() {
+        // 2:1 の画像を 100 幅にリサイズ
+        let (_w, h) = calculate_new_dimensions(200, 100, 100);
+        // 高さは (100/200) * 100 * 0.5 = 25 になるはず
+        assert!(h > 0 && h < 100);
+    }
+
+    #[test]
+    fn test_calculate_new_dimensions_square() {
+        let (w, h) = calculate_new_dimensions(100, 100, 200);
+        assert_eq!(w, 200);
+        assert!(h > 0);
+    }
+
+    // ========== 単体テスト: ASCII 変換 ==========
+    #[test]
+    fn test_brightness_to_ascii_dark() {
+        let ascii = brightness_to_ascii(0.0);
+        assert_eq!(ascii, " "); // 暗いと空白
+    }
+
+    #[test]
+    fn test_brightness_to_ascii_bright() {
+        let ascii = brightness_to_ascii(255.0);
+        assert_eq!(ascii, "$"); // 明るいと最も濃い文字
+    }
+
+    #[test]
+    fn test_brightness_to_ascii_mid() {
+        let mid_ascii = brightness_to_ascii(127.5);
+        let dark_ascii = brightness_to_ascii(0.0);
+        let bright_ascii = brightness_to_ascii(255.0);
+        assert_ne!(mid_ascii, dark_ascii);
+        assert_ne!(mid_ascii, bright_ascii);
+    }
+
+    #[test]
+    fn test_brightness_to_ascii_monotonic() {
+        let a1 = brightness_to_ascii(50.0);
+        let a2 = brightness_to_ascii(150.0);
+        let a3 = brightness_to_ascii(250.0);
+        // 複数の異なる文字が返ることを確認
+        assert_ne!(a1, a3);
+    }
+
+    // ========== 単体テスト: コマンドライン引数 ==========
+    #[test]
+    fn test_get_image_path_valid() {
+        let args = vec![
+            "img-ascii".to_string(),
+            "test.png".to_string(),
+        ];
+        let result = get_image_path(&args);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "test.png");
+    }
+
+    #[test]
+    fn test_get_image_path_missing() {
+        let args = vec!["img-ascii".to_string()];
+        let result = get_image_path(&args);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_image_path_empty() {
+        let args: Vec<String> = vec![];
+        let result = get_image_path(&args);
+        assert!(result.is_err());
     }
 }
