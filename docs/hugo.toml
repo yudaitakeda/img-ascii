@@ -1,0 +1,7 @@
+baseURL = "https://yudaitakeda.github.io/img-ascii/"
+languageCode = "ja"
+title = "img-ascii"
+
+[module]
+  [[module.imports]]
+    path = "github.com/jpanther/congo/v2"
