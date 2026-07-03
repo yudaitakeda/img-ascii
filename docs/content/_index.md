@@ -1,6 +1,5 @@
 ---
-
-## title: "img-ascii"
+ title: "img-ascii"
 ---
 # img-ascii
 

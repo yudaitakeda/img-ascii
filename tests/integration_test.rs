@@ -4,7 +4,6 @@
 /// プログラム全体が正常に動作することを検証します。
 
 use std::path::Path;
-use std::fs;
 
 #[test]
 #[ignore = "requires actual image file"]

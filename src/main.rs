@@ -1,5 +1,8 @@
-use std::env;
+mod gencomp;
+
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use image::GenericImageView;
+use std::path::{Path, PathBuf};
 
 // ============ 定数 ============
 const DEFAULT_WIDTH: u32 = 270;
@@ -17,8 +20,6 @@ const ASCII_CHARS: &[&str] = &[
     "w", "q", "p", "d", "b", "k", "h", "a", "o", "*", "#", "M",
     "W", "&", "8", "%", "B", "@", "$"
 ];
-
-const USAGE: &str = "使用法: cargo run -- <画像へのパス>";
 
 // ============ エラー型 ============
 #[derive(Debug)]
@@ -38,12 +39,45 @@ impl std::fmt::Display for AppError {
 
 // ============ 関数群 ============
 
+#[derive(Parser, Debug)]
+#[command(name = "img-ascii", version, about = "Convert images into ASCII art")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    #[arg(value_name = "IMAGE_PATH")]
+    image_path: Option<PathBuf>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Generate shell completion scripts
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: CompletionShell,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum CompletionShell {
+    Bash,
+    Zsh,
+    Fish,
+    PowerShell,
+    Elvish,
+}
+
 /// コマンドライン引数から画像パスを取得
-fn get_image_path(args: &[String]) -> Result<String, AppError> {
-    if args.len() < 2 {
-        return Err(AppError::InvalidArgs(USAGE.to_string()));
+fn require_image_path(cli: Cli) -> Result<PathBuf, AppError> {
+    if let Some(path) = cli.image_path {
+        return Ok(path);
     }
-    Ok(args[1].clone())
+
+    Err(AppError::InvalidArgs(format!(
+        "画像ファイルのパスを指定してください\n{}",
+        Cli::command().render_usage()
+    )))
 }
 
 /// 画像の新しいサイズを計算
@@ -66,7 +100,7 @@ fn brightness_to_ascii(brightness: f32) -> &'static str {
 }
 
 /// 画像をASCII化して出力
-fn convert_image_to_ascii(img_path: &str) -> Result<(), AppError> {
+fn convert_image_to_ascii(img_path: impl AsRef<Path>) -> Result<(), AppError> {
     // 画像を開く
     let img = image::open(img_path)
         .map_err(|e| AppError::ImageLoadError(e.to_string()))?;
@@ -95,20 +129,30 @@ fn convert_image_to_ascii(img_path: &str) -> Result<(), AppError> {
 // ============ メイン処理 ============
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let cli = Cli::parse();
 
-    // 画像パスを取得
-    let img_path = match get_image_path(&args) {
-        Ok(path) => path,
-        Err(e) => {
-            eprintln!("{}", e);
-            return;
+    match cli.command {
+        Some(Commands::Completions { shell }) => {
+            if let Err(e) = gencomp::generate_completions(shell) {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
         }
-    };
+        None => {
+            let img_path = match require_image_path(cli) {
+                Ok(path) => path,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                }
+            };
 
-    // ASCII化して出力
-    if let Err(e) = convert_image_to_ascii(&img_path) {
-        eprintln!("{}", e);
+            // ASCII化して出力
+            if let Err(e) = convert_image_to_ascii(img_path) {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        }
     }
 }
 
@@ -116,6 +160,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::Parser;
 
     // ========== 単体テスト: 明るさ計算 ==========
     #[test]
@@ -209,7 +254,7 @@ mod tests {
     #[test]
     fn test_brightness_to_ascii_monotonic() {
         let a1 = brightness_to_ascii(50.0);
-        let a2 = brightness_to_ascii(150.0);
+        let _a2 = brightness_to_ascii(150.0);
         let a3 = brightness_to_ascii(250.0);
         // 複数の異なる文字が返ることを確認
         assert_ne!(a1, a3);
@@ -217,27 +262,22 @@ mod tests {
 
     // ========== 単体テスト: コマンドライン引数 ==========
     #[test]
-    fn test_get_image_path_valid() {
-        let args = vec![
-            "img-ascii".to_string(),
-            "test.png".to_string(),
-        ];
-        let result = get_image_path(&args);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "test.png");
+    fn test_cli_parses_image_path() {
+        let cli = Cli::try_parse_from(["img-ascii", "test.png"]).unwrap();
+        assert!(cli.command.is_none());
+        assert_eq!(cli.image_path, Some(PathBuf::from("test.png")));
     }
 
     #[test]
-    fn test_get_image_path_missing() {
-        let args = vec!["img-ascii".to_string()];
-        let result = get_image_path(&args);
-        assert!(result.is_err());
-    }
+    fn test_cli_parses_completions_subcommand() {
+        let cli = Cli::try_parse_from(["img-ascii", "completions", "bash"]).unwrap();
 
-    #[test]
-    fn test_get_image_path_empty() {
-        let args: Vec<String> = vec![];
-        let result = get_image_path(&args);
-        assert!(result.is_err());
+        assert_eq!(cli.image_path, None);
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Completions {
+                shell: CompletionShell::Bash
+            })
+        ));
     }
 }
